@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WANO TERMINAL</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box }
+    html, body { width:100%; height:100% }
+    body {
+      background:#000;
+      font-family:'Courier New', Courier, monospace;
+      color:#fff;
+      font-size:16px;
+      line-height:1.4;
+      overflow:hidden;
+    }
+    
+    .screen {
+      position:absolute;
+      inset:0;
+      display:none;
+      overflow-y:auto;
+      background:#000;
+      z-index:1;
+    }
+    
+    .screen.active {
+      display:block;
+      z-index:2;
+    }
+    
+    .container {
+      max-width:800px;
+      margin:0 auto;
+      padding:2rem;
+    }
+    
+    pre {
+      margin:0;
+      font-family:inherit;
+      white-space:pre;
+    }
+    
+    .box {
+      margin:2rem 0;
+    }
+    
+    a {
+      color:#00ff00;
+      text-decoration:none;
+      border-bottom:1px solid #00ff00;
+      font-weight:bold;
+    }
+    
+    a:hover {
+      background:#00ff00;
+      color:#000;
+    }
+    
+    input {
+      background:#000;
+      border:none;
+      border-bottom:1px solid #00ff00;
+      color:#fff;
+      font-family:inherit;
+      font-size:16px;
+      outline:none;
+      padding:0.2rem 0;
+      caret-color:#00ff00;
+    }
+    
+    input::placeholder {
+      color:#666;
+    }
+    
+    .prompt {
+      margin-top:1rem;
+    }
+    
+    /* Manifesto styles */
+    #manifestoScreen {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:2rem;
+      cursor:pointer;
+    }
+    
+    .manifesto-content {
+      max-width:700px;
+      position:relative;
+    }
+    
+    #manifestoText {
+      white-space:pre-wrap;
+      line-height:1.8;
+      font-size:18px;
+    }
+    
+    .cursor {
+      display:inline-block;
+      width:10px;
+      height:20px;
+      background:#00ff00;
+      margin-left:2px;
+      animation:blink-cursor 0.8s step-end infinite;
+    }
+    
+    @keyframes blink-cursor {
+      0%, 50% { opacity:1 }
+      51%, 100% { opacity:0 }
+    }
+    
+    .continue {
+      margin-top:2rem;
+      opacity:0;
+      transition:opacity 0.5s;
+    }
+    
+    .continue.visible {
+      opacity:1;
+    }
+    
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    
+    .highlight {
+      color:#00ff00;
+      font-weight:bold;
+    }
+    
+    @media (max-width:600px) {
+      .container {
+        padding:1rem;
+        font-size:14px;
+      }
+      
+      #manifestoScreen {
+        padding:1.5rem;
+      }
+      
+      #manifestoText {
+        font-size:15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="screen active">
+    <div class="container">
+      <pre class="box">
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║                         <span class="highlight">WANO TERMINAL v1.0</span>                         ║
+║                                                                    ║
+║                    SECURE ACCESS POINT REQUIRED                    ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+      </pre>
+
+      <pre class="box">
+SYSTEM STATUS ......................................... <span class="highlight">[ ONLINE ]</span>
+ENCRYPTION ....................................... <span class="highlight">AES-256 ACTIVE</span>
+FIREWALL .............................................. <span class="highlight">[ ENABLED ]</span>
+      </pre>
+
+      <div class="prompt">
+        <pre>root@wano:~$ <input type="password" id="pwInput" placeholder="enter passphrase" autocomplete="off" /></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANIFESTO SCREEN -->
+  <div id="manifestoScreen" class="screen">
+    <div class="manifesto-content">
+      <div id="manifestoText"></div><span class="cursor" id="cursor"></span>
+      <div class="continue" id="continueHint">
+        <br>
+        > Appuie sur ENTRÉE pour continuer_
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div id="dashboardScreen" class="screen">
+    <div class="container">
+      <pre class="box">
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║                         <span class="highlight">WANO TERMINAL v1.0</span>                         ║
+║                    <span class="highlight">ACCESS GRANTED</span> - CITOYEN ÉTIENNE                ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+      </pre>
+
+      <pre class="box">
+┌─ <span class="highlight">SYSTEM INFO</span> ──────────────────────────────────────────────────────┐
+│                                                                    │
+│  USER ..................... <span class="highlight">ÉTIENNE</span>                                │
+│  SESSION .................. <span id="sessionId">SID-7F3A-92B1</span>                        │
+│  UPTIME ................... <span id="uptime">00:00:00</span>                             │
+│  DATE ..................... <span id="datetime">LOADING...</span>                   │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+      </pre>
+
+      <pre class="box">
+┌─ <span class="highlight">AVAILABLE MODULES</span> ────────────────────────────────────────────────┐
+│                                                                    │
+│  [1] <a href="tracks_grid.html">LATEST RELEASE</a> ............ Access newest transmission       │
+│  [2] <a href="tracks_grid.html">TRACK ARCHIVE</a> ............. Browse complete database         │
+│  [3] <a href="#">WANO CONSTITUTION</a> ........ View governance protocol       │
+│  [4] <a href="#">SYSTEM DOCUMENTATION</a> ..... Technical reference           │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+      </pre>
+
+      <pre class="box" id="logBox">
+┌─ <span class="highlight">SYSTEM LOG</span> ───────────────────────────────────────────────────────┐
+│                                                                    │
+│  <span id="log1">Initializing secure channel...</span>                                │
+│  <span id="log2"></span>                                │
+│  <span id="log3"></span>                                │
+│  <span id="log4"></span>                                │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+      </pre>
+
+      <pre class="box">
+>> Type 'help' for available commands
+>> Type 'logout' to terminate session
+
+root@wano:~$ <span style="border-right:8px solid #00ff00;animation:blink 1s step-end infinite"></span>
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    // Screen elements
+    const loginScreen = document.getElementById('loginScreen');
+    const manifestoScreen = document.getElementById('manifestoScreen');
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const pwInput = document.getElementById('pwInput');
+    
+    // ===== LOGIN =====
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && pwInput.value === 'aa') {
+        loginScreen.classList.remove('active');
+        manifestoScreen.classList.add('active');
+        startManifesto();
+      }
+    });
+    
+    // Focus input on load
+    window.addEventListener('load', () => {
+      setTimeout(() => pwInput.focus(), 100);
+    });
+    
+    // ===== MANIFESTO =====
+    const manifestoTextContent = `RÉPUBLIQUE OF WANO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MANIFESTE v1.0
+
+
+Dans le vide saturé du bruit numérique,
+nous traçons des sillons sonores.
+
+Chaque fréquence est un territoire.
+Chaque silence, une déclaration.
+
+Nous ne produisons pas de la musique pour remplir l'espace,
+mais pour révéler ce qui existe déjà
+dans les interstices du silence.
+
+
+WANO n'est pas un label.
+WANO n'est pas une marque.
+
+WANO est un protocole.
+Une infrastructure pour les transmissions non-commerciales.
+Un refuge pour les architectures sonores autonomes.
+
+
+Ici, pas de playlist algorithmique.
+Pas de métrique d'engagement.
+Pas d'optimisation pour la viralité.
+
+Seulement :
+  - Des fichiers audio
+  - Des métadonnées minimales
+  - Un accès direct
+
+
+Ce terminal est une porte.
+Ce que tu y trouveras dépend de ce que tu cherches.
+
+
+Bienvenue, citoyen.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+    const manifestoTextEl = document.getElementById('manifestoText');
+    const cursorEl = document.getElementById('cursor');
+    const continueEl = document.getElementById('continueHint');
+    
+    let manifestoIndex = 0;
+    let typingSpeed = 30;
+    let isTyping = false;
+    let typingInterval;
+    
+    function startManifesto() {
+      manifestoIndex = 0;
+      manifestoTextEl.textContent = '';
+      cursorEl.style.display = 'inline-block';
+      continueEl.classList.remove('visible');
+      isTyping = true;
+      typingInterval = setInterval(typeManifesto, typingSpeed);
+    }
+    
+    function typeManifesto() {
+      if (manifestoIndex < manifestoTextContent.length) {
+        manifestoTextEl.textContent += manifestoTextContent.charAt(manifestoIndex);
+        manifestoIndex++;
+      } else {
+        clearInterval(typingInterval);
+        isTyping = false;
+        cursorEl.style.display = 'none';
+        continueEl.classList.add('visible');
+      }
+    }
+    
+    function skipManifesto() {
+      if (isTyping) {
+        clearInterval(typingInterval);
+        manifestoTextEl.textContent = manifestoTextContent;
+        manifestoIndex = manifestoTextContent.length;
+        isTyping = false;
+        cursorEl.style.display = 'none';
+        continueEl.classList.add('visible');
+      }
+    }
+    
+    function proceedToDashboard() {
+      if (!isTyping) {
+        manifestoScreen.classList.remove('active');
+        dashboardScreen.classList.add('active');
+        startDashboard();
+      }
+    }
+    
+    // Manifesto event listeners
+    manifestoScreen.addEventListener('click', () => {
+      if (isTyping) {
+        skipManifesto();
+      } else {
+        proceedToDashboard();
+      }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (manifestoScreen.classList.contains('active')) {
+        if (e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          if (isTyping) {
+            skipManifesto();
+          }
+        }
+        if (e.key === 'Enter') {
+          if (!isTyping) {
+            proceedToDashboard();
+          }
+        }
+      }
+    });
+    
+    // ===== DASHBOARD =====
+    let startTime;
+    
+    function startDashboard() {
+      startTime = Date.now();
+      
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      
+      updateUptime();
+      setInterval(updateUptime, 1000);
+      
+      startSystemLog();
+    }
+    
+    function updateDateTime() {
+      const now = new Date();
+      const date = now.toLocaleDateString('fr-FR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      });
+      const time = now.toLocaleTimeString('fr-FR');
+      const el = document.getElementById('datetime');
+      if (el) el.textContent = date + ' ' + time;
+    }
+    
+    function updateUptime() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (elapsed % 60).toString().padStart(2, '0');
+      const el = document.getElementById('uptime');
+      if (el) el.textContent = hours + ':' + minutes + ':' + seconds;
+    }
+    
+    const logMessages = [
+      "Loading encrypted manifests...",
+      "Scanning frequency spectrum...",
+      "Parsing sonic artifacts...",
+      "Decrypting transmission logs...",
+      "Verifying citizen credentials...",
+      "Syncing temporal databases...",
+      "Analyzing waveform patterns...",
+      "Establishing secure channels...",
+      "Authenticating session tokens...",
+      "Compiling audio fragments...",
+      "Indexing track metadata...",
+      "Validating checksum integrity...",
+      "Mounting virtual filesystems...",
+      "Initializing audio codecs...",
+      "Loading configuration files..."
+    ];
+    
+    let logIndex = 0;
+    const logElements = [
+      document.getElementById('log1'),
+      document.getElementById('log2'),
+      document.getElementById('log3'),
+      document.getElementById('log4')
+    ];
+    
+    function startSystemLog() {
+      setTimeout(addLogEntry, 2000);
+    }
+    
+    function addLogEntry() {
+      logIndex++;
+      
+      logElements[3].textContent = logElements[2].textContent;
+      logElements[2].textContent = logElements[1].textContent;
+      logElements[1].textContent = logElements[0].textContent;
+      
+      const msg = logMessages[logIndex % logMessages.length];
+      logElements[0].textContent = msg;
+      
+      setTimeout(addLogEntry, 3000 + Math.random() * 2000);
+    }
+  </script>
+</body>
+</html>

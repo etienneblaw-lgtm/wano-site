@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>WANO ADMIN</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box }
+    html, body { height:100%; background:#000; color:#fff; font-family:'Courier New',monospace; }
+
+    /* LOGIN */
+    #loginScreen {
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:#000; z-index:100;
+    }
+    #loginScreen.hidden { display:none; }
+    .login-box { max-width:400px; width:100%; padding:2rem; border:1px solid #222; }
+    .login-box pre { color:#00ff00; font-size:0.9rem; margin-bottom:2rem; }
+    .login-box input {
+      width:100%; background:#000; border:none; border-bottom:1px solid #00ff00;
+      color:#fff; font-family:inherit; font-size:1rem; padding:0.5rem 0;
+      outline:none; caret-color:#00ff00;
+    }
+    .login-err { color:#ff4444; font-size:0.8rem; margin-top:0.8rem; display:none; }
+
+    /* LAYOUT */
+    .app { display:none; min-height:100vh; }
+    .app.visible { display:block; }
+
+    header {
+      padding:1rem 2rem;
+      border-bottom:1px solid #222;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; background:#000; z-index:50;
+    }
+    .brand { color:#00ff00; font-size:1rem; }
+    .header-nav { display:flex; gap:1rem; }
+    .header-nav a { color:#666; text-decoration:none; font-size:0.85rem; }
+    .header-nav a:hover { color:#00ff00; }
+
+    .main { max-width:1100px; margin:0 auto; padding:2rem; display:grid; grid-template-columns:1fr 380px; gap:2rem; }
+
+    /* FORM */
+    .panel { border:1px solid #1a1a1a; padding:1.5rem; }
+    .panel-title { color:#00ff00; font-size:0.85rem; letter-spacing:0.1em; margin-bottom:1.5rem; border-bottom:1px solid #1a1a1a; padding-bottom:0.8rem; }
+
+    .field { margin-bottom:1.2rem; }
+    label { display:block; font-size:0.75rem; color:#666; letter-spacing:0.05em; margin-bottom:0.4rem; }
+    input[type=text], input[type=number], textarea, select {
+      width:100%; background:#050505; border:1px solid #1a1a1a;
+      color:#fff; font-family:inherit; font-size:0.9rem;
+      padding:0.6rem 0.8rem; outline:none;
+      transition:border-color 0.15s;
+    }
+    input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus { border-color:#00ff00; }
+    textarea { resize:vertical; min-height:80px; }
+    select option { background:#000; }
+
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+
+    /* Tags input */
+    .tags-wrap { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.4rem; }
+    .tag-chip {
+      background:#001100; border:1px solid #00ff00; color:#00ff00;
+      font-size:0.75rem; padding:0.2rem 0.5rem;
+      display:flex; align-items:center; gap:0.4rem;
+    }
+    .tag-chip button { background:none; border:none; color:#00ff00; cursor:pointer; font-size:0.9rem; line-height:1; padding:0; }
+    .tags-input-row { display:flex; gap:0.5rem; }
+    .tags-input-row input { flex:1; }
+    .tags-input-row button {
+      background:#000; border:1px solid #333; color:#666;
+      font-family:inherit; font-size:0.8rem; padding:0.6rem 0.8rem; cursor:pointer;
+    }
+    .tags-input-row button:hover { border-color:#00ff00; color:#00ff00; }
+
+    /* R2 helper */
+    .r2-prefix { font-size:0.75rem; color:#444; margin-bottom:0.4rem; }
+    .r2-preview { font-size:0.75rem; color:#00ff00; margin-top:0.4rem; word-break:break-all; min-height:1em; }
+
+    /* Submit */
+    .btn-add {
+      width:100%; background:#000; border:1px solid #00ff00; color:#00ff00;
+      font-family:inherit; font-size:0.9rem; padding:0.9rem;
+      cursor:pointer; letter-spacing:0.05em; transition:all 0.15s; margin-top:0.5rem;
+    }
+    .btn-add:hover { background:#00ff00; color:#000; }
+
+    /* TRACK LIST */
+    .track-list { display:flex; flex-direction:column; gap:0.6rem; }
+    .track-item {
+      border:1px solid #1a1a1a; padding:0.8rem 1rem;
+      display:flex; align-items:flex-start; gap:0.8rem;
+    }
+    .track-item:hover { border-color:#333; }
+    .ti-info { flex:1; overflow:hidden; }
+    .ti-title { font-size:0.9rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ti-meta { font-size:0.75rem; color:#444; margin-top:0.2rem; }
+    .ti-src { font-size:0.7rem; color:#226622; margin-top:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ti-actions { display:flex; gap:0.4rem; flex-shrink:0; }
+    .ti-btn {
+      background:#000; border:1px solid #222; color:#555;
+      font-family:inherit; font-size:0.75rem; padding:0.3rem 0.6rem; cursor:pointer;
+    }
+    .ti-btn:hover { border-color:#00ff00; color:#00ff00; }
+    .ti-btn.del:hover { border-color:#ff4444; color:#ff4444; }
+    .ti-btn.up:hover, .ti-btn.down:hover { border-color:#aaa; color:#aaa; }
+
+    .empty-list { font-size:0.85rem; color:#333; text-align:center; padding:2rem; }
+
+    /* EXPORT */
+    .export-panel { margin-top:1.5rem; }
+    .export-btn {
+      width:100%; background:#001100; border:1px solid #00ff00; color:#00ff00;
+      font-family:inherit; font-size:0.85rem; padding:0.8rem;
+      cursor:pointer; letter-spacing:0.05em; transition:all 0.15s;
+    }
+    .export-btn:hover { background:#00ff00; color:#000; }
+    .export-code {
+      margin-top:1rem; background:#050505; border:1px solid #1a1a1a;
+      padding:1rem; font-size:0.75rem; color:#8f8; white-space:pre-wrap;
+      word-break:break-all; max-height:300px; overflow-y:auto; display:none;
+    }
+    .copy-btn {
+      width:100%; background:#000; border:1px solid #333; color:#666;
+      font-family:inherit; font-size:0.8rem; padding:0.6rem;
+      cursor:pointer; margin-top:0.5rem; display:none;
+    }
+    .copy-btn:hover { border-color:#00ff00; color:#00ff00; }
+    .copy-btn.copied { color:#00ff00; border-color:#00ff00; }
+
+    .count { font-size:0.75rem; color:#444; margin-bottom:1rem; }
+
+    @media (max-width:900px) {
+      .main { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <pre>╔═══════════════════════╗
+║   WANO ADMIN ACCESS   ║
+╚═══════════════════════╝</pre>
+    <input type="password" id="pwInput" placeholder="passphrase_" autocomplete="off">
+    <div class="login-err" id="loginErr">⊘ accès refusé</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <header>
+    <div class="brand">WANO ADMIN — TRACK MANAGER</div>
+    <nav class="header-nav">
+      <a href="wano_final.html">← Terminal</a>
+      <a href="tracks_grid.html">→ Track Grid</a>
+    </nav>
+  </header>
+
+  <div class="main">
+
+    <!-- FORM -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">[ AJOUTER / MODIFIER UNE TRACK ]</div>
+        <input type="hidden" id="editId">
+
+        <div class="field-row">
+          <div class="field">
+            <label>TITRE *</label>
+            <input type="text" id="f-title" placeholder="Nom de la track">
+          </div>
+          <div class="field">
+            <label>ANNÉE *</label>
+            <input type="number" id="f-year" placeholder="2025" min="1900" max="2099">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>TYPE</label>
+          <select id="f-type">
+            <option value="release">Release</option>
+            <option value="live">Live</option>
+            <option value="unreleased">Unreleased</option>
+            <option value="mix">Mix</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>TAGS</label>
+          <div class="tags-input-row">
+            <input type="text" id="f-tag-input" placeholder="ex: techno" id="tagInput">
+            <button onclick="addTag()">+ ADD</button>
+          </div>
+          <div class="tags-wrap" id="tags-wrap"></div>
+        </div>
+
+        <div class="field">
+          <label>FICHIER AUDIO (nom exact dans R2)</label>
+          <div class="r2-prefix">https://pub-a27a87aee8d64445bd42afcc0ae8ed45.r2.dev/</div>
+          <input type="text" id="f-filename" placeholder="mon-fichier.mp3" oninput="updateR2Preview()">
+          <div class="r2-preview" id="r2-preview"></div>
+        </div>
+
+        <div class="field">
+          <label>DESCRIPTION</label>
+          <textarea id="f-desc" placeholder="Courte description de la track…"></textarea>
+        </div>
+
+        <button class="btn-add" id="submitBtn" onclick="submitTrack()">+ AJOUTER LA TRACK</button>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="panel export-panel">
+        <div class="panel-title">[ EXPORT CODE ]</div>
+        <p style="font-size:0.8rem;color:#555;margin-bottom:1rem">Génère le tableau TRACKS à coller dans tracks_grid.html</p>
+        <button class="export-btn" onclick="exportCode()">⬇ GÉNÉRER LE CODE</button>
+        <pre class="export-code" id="exportCode"></pre>
+        <button class="copy-btn" id="copyBtn" onclick="copyCode()">⎘ COPIER LE CODE</button>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">[ TRACKS ENREGISTRÉES ]</div>
+        <div class="count" id="count">0 track(s)</div>
+        <div class="track-list" id="trackList">
+          <div class="empty-list">Aucune track pour l'instant.<br>Remplis le formulaire →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── AUTH ──
+  const PASSWORD = 'aa';
+  const pwInput = document.getElementById('pwInput');
+  const loginErr = document.getElementById('loginErr');
+
+  pwInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (pwInput.value === PASSWORD) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        renderList();
+      } else {
+        loginErr.style.display = 'block';
+        pwInput.value = '';
+      }
+    }
+  });
+  setTimeout(() => pwInput.focus(), 100);
+
+  // ── STATE ──
+  let tracks = JSON.parse(localStorage.getItem('wano_tracks') || '[]');
+  let currentTags = [];
+  let editingId = null;
+  const R2_BASE = 'https://pub-a27a87aee8d64445bd42afcc0ae8ed45.r2.dev/';
+
+  function save() {
+    localStorage.setItem('wano_tracks', JSON.stringify(tracks));
+  }
+
+  function genId() {
+    return 'w' + Date.now();
+  }
+
+  // ── TAGS ──
+  function addTag() {
+    const input = document.getElementById('f-tag-input');
+    const val = input.value.trim().toLowerCase().replace(/\s+/g, '-');
+    if (!val || currentTags.includes(val)) { input.value = ''; return; }
+    currentTags.push(val);
+    input.value = '';
+    renderTags();
+  }
+
+  document.getElementById('f-tag-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+  });
+
+  function removeTag(t) {
+    currentTags = currentTags.filter(x => x !== t);
+    renderTags();
+  }
+
+  function renderTags() {
+    const wrap = document.getElementById('tags-wrap');
+    wrap.innerHTML = '';
+    currentTags.forEach(t => {
+      const chip = document.createElement('div');
+      chip.className = 'tag-chip';
+      chip.innerHTML = t + '<button onclick="removeTag(\'' + t + '\')">×</button>';
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ── R2 PREVIEW ──
+  function updateR2Preview() {
+    const val = document.getElementById('f-filename').value.trim();
+    const preview = document.getElementById('r2-preview');
+    preview.textContent = val ? R2_BASE + val : '';
+  }
+
+  // ── SUBMIT ──
+  function submitTrack() {
+    const title    = document.getElementById('f-title').value.trim();
+    const year     = parseInt(document.getElementById('f-year').value);
+    const type     = document.getElementById('f-type').value;
+    const filename = document.getElementById('f-filename').value.trim();
+    const desc     = document.getElementById('f-desc').value.trim();
+
+    if (!title) { alert('Le titre est obligatoire.'); return; }
+    if (!year)  { alert('L\'année est obligatoire.'); return; }
+
+    const src = filename ? R2_BASE + filename : '';
+
+    if (editingId) {
+      const idx = tracks.findIndex(t => t.id === editingId);
+      if (idx >= 0) {
+        tracks[idx] = { id: editingId, title, year, type, tags: [...currentTags], src, desc };
+      }
+      editingId = null;
+      document.getElementById('submitBtn').textContent = '+ AJOUTER LA TRACK';
+    } else {
+      tracks.push({ id: genId(), title, year, type, tags: [...currentTags], src, desc });
+    }
+
+    save();
+    resetForm();
+    renderList();
+  }
+
+  function resetForm() {
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-year').value = '';
+    document.getElementById('f-type').value = 'release';
+    document.getElementById('f-filename').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('r2-preview').textContent = '';
+    currentTags = [];
+    renderTags();
+    editingId = null;
+    document.getElementById('submitBtn').textContent = '+ AJOUTER LA TRACK';
+  }
+
+  // ── LIST ──
+  function renderList() {
+    const list = document.getElementById('trackList');
+    const count = document.getElementById('count');
+    count.textContent = tracks.length + ' track(s)';
+
+    if (tracks.length === 0) {
+      list.innerHTML = '<div class="empty-list">Aucune track pour l\'instant.<br>Remplis le formulaire ←</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    tracks.forEach((t, idx) => {
+      const item = document.createElement('div');
+      item.className = 'track-item';
+      item.innerHTML = `
+        <div class="ti-info">
+          <div class="ti-title">${t.title}</div>
+          <div class="ti-meta">${t.year} · ${t.type} · ${t.tags.join(', ') || '—'}</div>
+          <div class="ti-src">${t.src || '⊘ no source'}</div>
+        </div>
+        <div class="ti-actions">
+          <button class="ti-btn up" onclick="moveTrack(${idx}, -1)">↑</button>
+          <button class="ti-btn down" onclick="moveTrack(${idx}, 1)">↓</button>
+          <button class="ti-btn" onclick="editTrack('${t.id}')">✎</button>
+          <button class="ti-btn del" onclick="deleteTrack('${t.id}')">✕</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function deleteTrack(id) {
+    if (!confirm('Supprimer cette track ?')) return;
+    tracks = tracks.filter(t => t.id !== id);
+    save(); renderList();
+  }
+
+  function editTrack(id) {
+    const t = tracks.find(x => x.id === id);
+    if (!t) return;
+    editingId = id;
+    document.getElementById('f-title').value = t.title;
+    document.getElementById('f-year').value  = t.year;
+    document.getElementById('f-type').value  = t.type;
+    document.getElementById('f-desc').value  = t.desc || '';
+    // Extract filename from src
+    const filename = t.src ? t.src.replace(R2_BASE, '') : '';
+    document.getElementById('f-filename').value = filename;
+    updateR2Preview();
+    currentTags = [...t.tags];
+    renderTags();
+    document.getElementById('submitBtn').textContent = '✓ MODIFIER LA TRACK';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function moveTrack(idx, dir) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= tracks.length) return;
+    [tracks[idx], tracks[newIdx]] = [tracks[newIdx], tracks[idx]];
+    save(); renderList();
+  }
+
+  // ── EXPORT ──
+  function exportCode() {
+    const codeEl = document.getElementById('exportCode');
+    const copyBtn = document.getElementById('copyBtn');
+
+    if (tracks.length === 0) { alert('Aucune track à exporter.'); return; }
+
+    const lines = tracks.map((t, i) => {
+      const tags = JSON.stringify(t.tags);
+      const src  = t.src || '';
+      const desc = (t.desc || '').replace(/'/g, "\\'");
+      return `      { id:'${t.id}', title:'${t.title.replace(/'/g,"\\'")}', year:${t.year}, type:'${t.type}', tags:${tags}, src:'${src}', desc:'${desc}' }`;
+    }).join(',\n');
+
+    const code = `const TRACKS = [\n${lines}\n    ];`;
+    codeEl.textContent = code;
+    codeEl.style.display = 'block';
+    copyBtn.style.display = 'block';
+    copyBtn.textContent = '⎘ COPIER LE CODE';
+    copyBtn.classList.remove('copied');
+  }
+
+  function copyCode() {
+    const code = document.getElementById('exportCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ COPIÉ !';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '⎘ COPIER LE CODE';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
